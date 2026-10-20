@@ -172,6 +172,10 @@ export const api = {
   markBonusSeen: (id: string) => request<unknown>('POST', `api/coins/bonus/${id}/seen`),
 
   // ---------- Notifications ----------
+  /** This browser's Firebase Cloud Messaging token, for web push. */
+  registerPushToken: (token: string) =>
+    request<unknown>('POST', 'api/notifications/token', { token, provider: 'fcm', platform: 'web' }),
+  unregisterPushToken: (token: string) => request<unknown>('DELETE', 'api/notifications/token', { token }),
   notifications: () => request<D.NotificationsResponse>('GET', 'api/notifications'),
   notificationsUnread: () => request<D.UnreadNotificationsResponse>('GET', 'api/notifications/unread-count'),
   markNotificationsRead: () => request<D.UnreadNotificationsResponse>('POST', 'api/notifications/read'),

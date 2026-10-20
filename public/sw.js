@@ -1,6 +1,7 @@
-// Caches the app shell so the installed app opens fast. API and socket traffic
-// always goes to the network. Bump VERSION to drop old caches.
-const VERSION = 'relun-shell-v1';
+// Caches the app shell so the installed app opens fast, and shows push
+// notifications (sent through Firebase Cloud Messaging, see src/util/webPush.ts).
+// API and socket traffic always goes to the network. Bump VERSION to drop old caches.
+const VERSION = 'relun-shell-v2';
 const SHELL = ['/', '/manifest.webmanifest', '/favicon.svg', '/icons/icon-192.png', '/fonts/outfit.ttf', '/fonts/pacifico.ttf'];
 
 self.addEventListener('install', (event) => {
@@ -22,6 +23,8 @@ self.addEventListener('fetch', (event) => {
   const url = new URL(request.url);
   if (url.origin !== self.location.origin) return;
   if (url.pathname.startsWith('/api') || url.pathname.startsWith('/socket.io')) return;
+  // The dev server's modules change on every edit; never cache them.
+  if (/^\/(src|node_modules|@)/.test(url.pathname)) return;
 
   // Pages: network first so a deploy shows up at once; the cached shell when offline.
   if (request.mode === 'navigate') {
@@ -50,5 +53,57 @@ self.addEventListener('fetch', (event) => {
           return response;
         }),
     ),
+  );
+});
+
+// ---------- Push ----------
+
+// Where a tap goes, from the push's data (the same types the Android app reads).
+const urlFor = (data) => {
+  const userId = data && data.userId;
+  switch (data && data.type) {
+    case 'message':
+    case 'message_request':
+    case 'match':
+      return userId ? `/chat/${encodeURIComponent(userId)}` : '/';
+    default:
+      return '/';
+  }
+};
+
+self.addEventListener('push', (event) => {
+  let payload = {};
+  try {
+    payload = event.data ? event.data.json() : {};
+  } catch {
+    payload = { notification: { title: 'Relun', body: event.data ? event.data.text() : '' } };
+  }
+  const notification = payload.notification || {};
+  const data = payload.data || {};
+
+  event.waitUntil(
+    self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((windows) => {
+      // Relun is open and on screen: it already shows this live.
+      if (windows.some((w) => w.visibilityState === 'visible')) return;
+      return self.registration.showNotification(notification.title || 'Relun', {
+        body: notification.body || '',
+        icon: '/icons/icon-192.png',
+        badge: '/icons/icon-192.png',
+        tag: data.userId ? `${data.type}-${data.userId}` : data.type,
+        data: { url: urlFor(data) },
+      });
+    }),
+  );
+});
+
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close();
+  const url = (event.notification.data && event.notification.data.url) || '/';
+  event.waitUntil(
+    self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((windows) => {
+      const open = windows.find((w) => new URL(w.url).origin === self.location.origin);
+      if (open) return open.focus().then((w) => (w && 'navigate' in w ? w.navigate(url) : undefined));
+      return self.clients.openWindow(url);
+    }),
   );
 });

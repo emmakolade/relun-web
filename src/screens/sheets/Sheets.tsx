@@ -6,6 +6,7 @@ import { RelunTextField } from '../../components/Inputs';
 import { useSegment } from '../../components/segment';
 import { Avatar, CoinIcon } from '../../components/Visuals';
 import type { CoinPackageDto, PendingBonusDto } from '../../data/dtos';
+import type { PushAskMode, PushAskReason } from '../../util/pushAsk';
 import { firstName, initialOf, mainPhotoUrl, type Person, type PlusPlan, type Wallet } from '../../data/models';
 import { RelunColors, T } from '../../theme';
 import { formatCoins, formatMoney } from '../../util/format';
@@ -669,5 +670,63 @@ function SheetAction({ icon, text, color, onClick }: { icon: string; text: strin
       <Icon name={icon} outline size={22} color={color} />
       <span style={{ ...T.bodyLarge, fontWeight: 500, color }}>{text}</span>
     </button>
+  );
+}
+
+const PUSH_COPY: Record<PushAskReason, [string, string]> = {
+  login: ['Turn on notifications', 'Know the moment someone likes you, matches with you or messages you.'],
+  match: ['Don’t miss their reply', 'Turn on notifications to hear the moment your match messages you.'],
+  request: ['Know when they answer', 'Turn on notifications and we’ll tell you as soon as they reply.'],
+  date: ['Know when someone wants to join', 'Turn on notifications to hear about requests to join your date.'],
+};
+
+/**
+ * Our own ask before the browser's notification prompt. "Turn on" shows the
+ * real prompt; if they blocked it, or are on an iPhone without the Home Screen
+ * app, it says how to fix that instead.
+ */
+export function PushAskSheet(props: { mode: PushAskMode; reason: PushAskReason; onTurnOn: () => void; onDismiss: () => void }) {
+  const { mode, reason, onTurnOn, onDismiss } = props;
+  const seg = useSegment();
+  const [title, body] = PUSH_COPY[reason];
+  const help =
+    mode === 'blocked'
+      ? 'Notifications are blocked for Relun in this browser. Click the icon next to the web address, open Site settings and allow Notifications.'
+      : mode === 'install'
+        ? 'On iPhone, notifications work once Relun is on your Home Screen: tap Share, then Add to Home Screen, and open Relun from there.'
+        : null;
+  return (
+    <RelunSheet onDismiss={onDismiss}>
+      <div style={center}>
+        <div
+          style={{
+            width: 64,
+            height: 64,
+            borderRadius: 20,
+            background: seg.tint,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+        >
+          <Icon name="notifications_active" size={30} color={seg.text} />
+        </div>
+        <span style={{ ...T.titleLarge, color: RelunColors.Ink, textAlign: 'center' }}>{title}</span>
+        <span style={{ ...T.bodyMedium, color: RelunColors.Muted, textAlign: 'center' }}>{body}</span>
+        {help && (
+          <span style={{ ...T.bodySmall, color: RelunColors.Body, textAlign: 'center', background: RelunColors.ChipFill, borderRadius: 14, padding: '12px 14px' }}>
+            {help}
+          </span>
+        )}
+        {mode === 'prompt' ? (
+          <>
+            <PrimaryButton text="Turn on notifications" onClick={onTurnOn} leadingIcon="notifications" />
+            <LinkButton text="Not now" onClick={onDismiss} style={{ width: '100%' }} />
+          </>
+        ) : (
+          <PrimaryButton text="Got it" onClick={onDismiss} />
+        )}
+      </div>
+    </RelunSheet>
   );
 }

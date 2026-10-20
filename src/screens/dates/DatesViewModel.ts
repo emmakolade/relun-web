@@ -4,6 +4,7 @@ import { firstName, type DatePost, type DateRequestStatus } from '../../data/mod
 import { ApiException } from '../../data/network';
 import { dates, people } from '../../data/repositories';
 import { messenger } from '../../data/store';
+import { shell } from '../../navigation/shell';
 import type { LoadState } from '../main/TabCommon';
 
 export type DatesView = 'browse' | 'mine';
@@ -126,6 +127,7 @@ export function useDatesViewModel() {
         const { post: created, charged } = await dates.create(activity, place, at, description);
         update((s) => ({ ...s, posting: false, creating: false, view: 'mine', mine: [created, ...s.mine] }));
         messenger.success(charged > 0 ? `Your date is live · −${charged} coins` : 'Your date is live');
+        shell.offerPushAsk('date', 1000);
       } catch (e) {
         update((s) => ({ ...s, posting: false }));
         messenger.error(errorText(e, 'Couldn’t post your date.'));

@@ -8,6 +8,8 @@ import { chat, coins, people, plus, safety } from '../data/repositories';
 import { getApp, messenger } from '../data/store';
 import { Emitter } from '../util/emitter';
 import { openPaystack } from '../util/paystack';
+import { markPushAsked, shouldAskForPush, type PushAskMode, type PushAskReason } from '../util/pushAsk';
+import { webPush } from '../util/webPush';
 
 /*
  * The signed-in shell: tab selection, the coin, Plus and safety sheets, the
@@ -28,6 +30,8 @@ export type MainSheet =
   | { kind: 'plus' }
   /** Out of free likes for today. */
   | { kind: 'likeLimit' }
+  /** Our own "turn on notifications" card, before the browser's prompt. */
+  | { kind: 'pushAsk'; mode: PushAskMode; reason: PushAskReason }
   | { kind: 'more'; person: Person }
   | { kind: 'bonus'; bonus: PendingBonusDto };
 
@@ -107,7 +111,34 @@ export const shell = {
     const s = get();
     if (bonus && !s.sheet && !s.match) set({ sheet: { kind: 'bonus', bonus } });
   },
-  dismissMatch: () => set({ match: null }),
+  dismissMatch() {
+    const had = get().match != null;
+    set({ match: null });
+    if (had) shell.offerPushAsk('match');
+  },
+
+  /**
+   * Shows the notifications card if it's a good time: nothing else is open,
+   * and the once-a-week, three-times-in-all limits allow it.
+   */
+  offerPushAsk(reason: PushAskReason, delayMs = 700) {
+    setTimeout(() => {
+      const s = get();
+      if (s.sheet || s.match || getApp().auth.kind !== 'signedIn') return;
+      const mode = shouldAskForPush();
+      if (!mode) return;
+      markPushAsked();
+      set({ sheet: { kind: 'pushAsk', mode, reason } });
+    }, delayMs);
+  },
+
+  /** "Turn on" on the card: now the browser's own prompt, from this tap. */
+  async turnOnPush() {
+    set({ sheet: null });
+    const result = await webPush.enable();
+    if (result === 'on') messenger.success('Notifications are on');
+    else if (result === 'denied') messenger.info('Notifications stay off. You can turn them on any time in Settings.');
+  },
   dismissDialog: () => set({ dialog: null }),
   showDialog: (spec: DialogSpec) => set({ dialog: spec }),
   selectPackage: (index: number) => set({ selectedPackage: index }),
@@ -117,7 +148,9 @@ export const shell = {
    * offers to send a request.
    */
   async openChat(person: Person) {
+    const fromMatch = get().match != null;
     set({ match: null });
+    if (fromMatch) shell.offerPushAsk('match', 1200);
     if (person.isMatch || person.messageRequest) {
       shellNav.emit({ type: 'openChat', userId: person.id, name: person.name });
       return;
@@ -148,6 +181,7 @@ export const shell = {
       else if (res.charged > 0) messenger.success(`Message sent to ${firstName(person)} · −${res.charged} coins`);
       else messenger.success(`Message sent to ${firstName(person)} · free`);
       shellNav.emit({ type: 'openChat', userId: person.id, name: person.name });
+      shell.offerPushAsk('request', 1200);
     } catch (e) {
       set({ sendingRequest: false });
       if (e instanceof ApiException && e.isInsufficientCoins) shell.openCoins({ kind: 'request', person });

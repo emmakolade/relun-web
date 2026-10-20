@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { BackButton, PrimaryButton } from '../../components/Buttons';
 import { InfoNote } from '../../components/Controls';
+import { Icon } from '../../components/Icon';
 import { LabeledField, RelunTextField } from '../../components/Inputs';
 import { profile } from '../../data/repositories';
 import { messenger, useApp } from '../../data/store';
@@ -103,12 +104,61 @@ export function EditProfileScreen() {
               placeholder="Jazz, Hiking, Cooking"
             />
           </LabeledField>
-          <InfoNote text="Your date of birth and what you’re looking for can’t be changed." icon="lock" />
+          {me?.email && (
+            <LabeledField label="Email">
+              <LockedValue text={me.email} />
+            </LabeledField>
+          )}
+          {me?.phone && (
+            <LabeledField label="Phone">
+              <LockedValue text={me.phone} />
+            </LabeledField>
+          )}
+          <InfoNote
+            text={`Your ${me?.email ? 'email, ' : me?.phone ? 'phone number, ' : ''}date of birth and what you’re looking for can’t be changed.`}
+            icon="lock"
+          />
         </div>
       </div>
       <div style={{ padding: '12px 24px' }}>
         <PrimaryButton text="Save" onClick={() => void save()} enabled={name.trim() !== ''} loading={saving} />
       </div>
+    </div>
+  );
+}
+
+/** A field shown for reference only, like the sign-in email: greyed, with a lock. */
+function LockedValue({ text }: { text: string }) {
+  return (
+    <div
+      aria-readonly
+      style={{
+        height: 54,
+        borderRadius: 16,
+        border: `1.5px solid ${RelunColors.Border}`,
+        background: RelunColors.ChipFill,
+        padding: '0 16px',
+        display: 'flex',
+        alignItems: 'center',
+        gap: 10,
+      }}
+    >
+      <span
+        style={{
+          ...T.bodyLarge,
+          fontSize: 17,
+          fontWeight: 500,
+          color: RelunColors.Body,
+          flex: 1,
+          minWidth: 0,
+          overflow: 'hidden',
+          textOverflow: 'ellipsis',
+          whiteSpace: 'nowrap',
+        }}
+      >
+        {text}
+      </span>
+      <Icon name="lock" size={18} color={RelunColors.Muted} label="Can’t be changed" />
     </div>
   );
 }

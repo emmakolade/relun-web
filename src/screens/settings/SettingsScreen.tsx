@@ -11,6 +11,7 @@ import { useAppActions } from '../../navigation/actions';
 import { RelunColors, T } from '../../theme';
 import { formatCoins } from '../../util/format';
 import { location } from '../../util/location';
+import { webPush } from '../../util/webPush';
 
 /** Android BuildConfig.VERSION_NAME / VERSION_CODE. */
 const VERSION_LABEL = 'Relun 2.0.0 (build 57)';
@@ -42,6 +43,17 @@ export function SettingsScreen() {
   const seg = useSegment();
   const settings = useApp((s) => s.settings);
   const wallet = useApp((s) => s.wallet);
+  // 'ask': push works here but this browser hasn't been asked yet.
+  const [browserPush, setBrowserPush] = useState(() =>
+    webPush.available() && Notification.permission === 'default' ? 'ask' : 'done',
+  );
+  const turnOnBrowserPush = async () => {
+    const result = await webPush.enable();
+    setBrowserPush('done');
+    if (result === 'denied') {
+      messenger.info('Notifications are blocked for this site. Allow them in your browser’s site settings.');
+    }
+  };
   const [dialog, setDialog] = useState<DialogSpec | null>(null);
   const [blockedCount, setBlockedCount] = useState<number | null>(null);
   const [locationOn, setLocationOn] = useState(false);
@@ -162,15 +174,17 @@ export function SettingsScreen() {
               <ToggleRow
                 title="Push notifications"
                 checked={settings.notificationsEnabled}
+                subtitle={webPush.needsInstall() ? 'On iPhone, add Relun to your Home Screen to get notifications' : undefined}
                 onToggle={() => {
                   const next = !settings.notificationsEnabled;
-                  // Turning it on also asks the browser, which Android does at sign-in.
-                  if (next && 'Notification' in window && Notification.permission === 'default') {
-                    void Notification.requestPermission().catch(() => {});
-                  }
+                  // Turning it on also asks this browser, which Android does at sign-in.
+                  if (next) void turnOnBrowserPush();
                   patch({ notificationsEnabled: next }, { ...settings, notificationsEnabled: next });
                 }}
               />
+              {settings.notificationsEnabled && browserPush === 'ask' && (
+                <ListRow title="Allow notifications in this browser" onClick={() => void turnOnBrowserPush()} />
+              )}
               <ListRow
                 title="Location services"
                 onClick={() => void openLocation()}

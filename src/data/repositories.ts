@@ -18,6 +18,7 @@ import { session } from './session';
 import { chatSocket } from './socket';
 import { getApp, setApp, type MyProfile, type OnboardingStart } from './store';
 import { Emitter } from '../util/emitter';
+import { webPush } from '../util/webPush';
 
 /*
  * The web counterpart of Android's repositories + AppContainer. Functions throw
@@ -70,6 +71,8 @@ export const auth = {
   finishOnboarding: () => setSignedIn(),
 
   async signOut() {
+    // While still signed in, so the backend accepts it.
+    await webPush.unregister();
     try {
       await api.logout();
     } catch {
@@ -114,6 +117,7 @@ function setSignedIn() {
   void settings.refresh().catch(() => {});
   chat.refreshUnread();
   inbox.refreshUnread();
+  void webPush.sync();
 }
 
 // A refreshed access token means the socket's handshake token is stale.

@@ -17,6 +17,7 @@ import {
   MessageRequestSheet,
   MoreSheet,
   PlusSheet,
+  PushAskSheet,
   WelcomeCoinsSheet,
 } from '../screens/sheets/Sheets';
 import { shell, shellNav, useShell } from './shell';
@@ -42,6 +43,11 @@ export function MainFlow() {
   useEffect(() => {
     shell.reset();
     shell.offerBonus(useApp.getState().wallet.pendingBonus);
+    // On sign-in or opening the app: ask about notifications if they aren't on,
+    // after the welcome-coins sheet has had its turn.
+    const ask = setTimeout(() => {
+      if (!useApp.getState().wallet.pendingBonus) shell.offerPushAsk('login', 0);
+    }, 3000);
     const unsubscribeWallet = useApp.subscribe((s, prev) => {
       if (s.wallet.pendingBonus !== prev.wallet.pendingBonus) shell.offerBonus(s.wallet.pendingBonus);
     });
@@ -50,6 +56,7 @@ export function MainFlow() {
       else navigate('/', { replace: true });
     });
     return () => {
+      clearTimeout(ask);
       unsubscribeWallet();
       unsubscribeNav();
     };
@@ -119,6 +126,9 @@ export function MainFlow() {
           onCancelRenew={shell.confirmCancelPlus}
           onDismiss={shell.closeSheet}
         />
+      )}
+      {sheet?.kind === 'pushAsk' && (
+        <PushAskSheet mode={sheet.mode} reason={sheet.reason} onTurnOn={() => void shell.turnOnPush()} onDismiss={shell.closeSheet} />
       )}
       {sheet?.kind === 'likeLimit' && <LikeLimitSheet wallet={wallet} onPlus={shell.openPlus} onDismiss={shell.closeSheet} />}
       {sheet?.kind === 'bonus' && <WelcomeCoinsSheet bonus={sheet.bonus} wallet={wallet} onDismiss={shell.closeSheet} />}
