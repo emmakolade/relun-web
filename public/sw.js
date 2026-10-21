@@ -3,7 +3,7 @@
 // API and socket traffic always goes to the network. Bump VERSION to drop old caches.
 // The app is served at /app/ (every /app/* path gets the same app.html); the
 // public pages outside it are separate prerendered files.
-const VERSION = 'relun-shell-v3';
+const VERSION = 'relun-shell-v4';
 const APP = '/app/';
 const SHELL = [APP, '/manifest.webmanifest', '/favicon.svg', '/icons/icon-192.png', '/fonts/outfit.ttf', '/fonts/pacifico.ttf'];
 
@@ -96,7 +96,7 @@ self.addEventListener('push', (event) => {
       return self.registration.showNotification(notification.title || 'Relun', {
         body: notification.body || '',
         icon: '/icons/icon-192.png',
-        badge: '/icons/icon-192.png',
+        badge: '/icons/badge-96.png',
         tag: data.userId ? `${data.type}-${data.userId}` : data.type,
         data: { url: urlFor(data) },
       });
