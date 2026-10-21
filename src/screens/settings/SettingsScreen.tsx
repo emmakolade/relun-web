@@ -11,6 +11,7 @@ import { useAppActions } from '../../navigation/actions';
 import { RelunColors, T } from '../../theme';
 import { formatCoins } from '../../util/format';
 import { location } from '../../util/location';
+import { openSitePage, SitePages } from '../../util/sitePages';
 import { webPush } from '../../util/webPush';
 
 /** Android BuildConfig.VERSION_NAME / VERSION_CODE. */
@@ -196,8 +197,8 @@ export function SettingsScreen() {
             <Section title="Account">
               <ListRow title="Relun Plus" onClick={actions.openPlus} value={wallet.plus ? 'Active' : 'Get Plus'} />
               <ListRow title="Coins & purchases" onClick={actions.openCoins} value={formatCoins(wallet.balance)} />
-              <ListRow title="Help" onClick={() => messenger.info('Coming soon')} />
-              <ListRow title="Terms of Service" onClick={() => messenger.info('Coming soon')} />
+              <ListRow title="Help" onClick={() => openSitePage(SitePages.help)} />
+              <ListRow title="Terms of Service" onClick={() => openSitePage(SitePages.terms)} />
               <ListRow
                 title="Log out"
                 onClick={() =>

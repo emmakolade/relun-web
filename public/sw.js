@@ -1,8 +1,11 @@
 // Caches the app shell so the installed app opens fast, and shows push
 // notifications (sent through Firebase Cloud Messaging, see src/util/webPush.ts).
 // API and socket traffic always goes to the network. Bump VERSION to drop old caches.
-const VERSION = 'relun-shell-v2';
-const SHELL = ['/', '/manifest.webmanifest', '/favicon.svg', '/icons/icon-192.png', '/fonts/outfit.ttf', '/fonts/pacifico.ttf'];
+// The app is served at /app/ (every /app/* path gets the same app.html); the
+// public pages outside it are separate prerendered files.
+const VERSION = 'relun-shell-v3';
+const APP = '/app/';
+const SHELL = [APP, '/manifest.webmanifest', '/favicon.svg', '/icons/icon-192.png', '/fonts/outfit.ttf', '/fonts/pacifico.ttf'];
 
 self.addEventListener('install', (event) => {
   event.waitUntil(caches.open(VERSION).then((cache) => cache.addAll(SHELL)).then(() => self.skipWaiting()));
@@ -26,16 +29,21 @@ self.addEventListener('fetch', (event) => {
   // The dev server's modules change on every edit; never cache them.
   if (/^\/(src|node_modules|@)/.test(url.pathname)) return;
 
-  // Pages: network first so a deploy shows up at once; the cached shell when offline.
+  // Pages: network first so a deploy shows up at once; the cached copy when offline.
+  // Every app screen shares one cached shell; each public page caches on its own.
   if (request.mode === 'navigate') {
+    const inApp = url.pathname === '/app' || url.pathname.startsWith(APP);
+    const key = inApp ? APP : url.pathname;
     event.respondWith(
       fetch(request)
         .then((response) => {
-          const copy = response.clone();
-          caches.open(VERSION).then((cache) => cache.put('/', copy));
+          if (response.ok) {
+            const copy = response.clone();
+            caches.open(VERSION).then((cache) => cache.put(key, copy));
+          }
           return response;
         })
-        .catch(() => caches.match('/')),
+        .catch(() => caches.match(key).then((cached) => cached || caches.match(APP))),
     );
     return;
   }
@@ -65,9 +73,9 @@ const urlFor = (data) => {
     case 'message':
     case 'message_request':
     case 'match':
-      return userId ? `/chat/${encodeURIComponent(userId)}` : '/';
+      return userId ? `${APP}chat/${encodeURIComponent(userId)}` : APP;
     default:
-      return '/';
+      return APP;
   }
 };
 
@@ -98,7 +106,7 @@ self.addEventListener('push', (event) => {
 
 self.addEventListener('notificationclick', (event) => {
   event.notification.close();
-  const url = (event.notification.data && event.notification.data.url) || '/';
+  const url = (event.notification.data && event.notification.data.url) || APP;
   event.waitUntil(
     self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((windows) => {
       const open = windows.find((w) => new URL(w.url).origin === self.location.origin);

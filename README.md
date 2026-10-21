@@ -14,7 +14,25 @@ In development the app calls its own origin, and Vite forwards `/api` and `/sock
 
 **On a phone (same Wi-Fi):** run `npm run dev:phone` and open `https://<your-pc-ip>:5173`. Accept the certificate warning; the certificate is self-signed. You need https because browsers only allow location access on secure pages. Windows Firewall must allow port 5173 on your network.
 
-`npm run build` writes a static site to `dist/`. Serve it with an SPA fallback, so every path returns `index.html`.
+## Public site and app
+
+relun.chat has two parts, built from this one project:
+
+- **The public site** (`src/site/`, entry `index.html`): home, pricing, safety, FAQ, about, terms, privacy and delete-account pages. These are what search engines index. `npm run build` prerenders each one to static HTML (`dist/<page>/index.html`, plus `dist/404.html` and `dist/sitemap.xml`), and the browser then hydrates it. This part doesn't load the app's code, Firebase or socket.io.
+- **The app** (entry `app.html`, `src/main.tsx`): everything under `/app/`. Its routes are unchanged inside (`/chat/:userId` is served at `/app/chat/:userId`). It is marked `noindex`.
+
+To add a public page, add a component in `src/site/pages/` and an entry in `src/site/pages.ts`. Any new icon also goes in the `SITE_ICONS` list in `src/site/SiteIcon.tsx`. Prices shown on the site live in `src/site/config.ts`; keep them in step with the backend `.env`.
+
+In dev, `npm run dev` serves both: `/` and the public pages render in the browser, and `/app/*` serves the app.
+
+### Hosting (AWS Amplify)
+
+`npm run build` writes everything to `dist/`. In the Amplify console:
+
+1. **Rewrites and redirects:** paste `amplify-redirects.json`. It sends the app's old paths (from before it moved under `/app/`) to their new place, serves `app.html` for `/app/*`, and returns `404.html` with a real 404 for anything else. Don't add a catch-all SPA rule that serves `index.html`.
+2. **Custom domain:** add `relun.chat` and redirect `www.relun.chat` to it.
+3. The `amplifyapp.com` address serves the same files. Every page's canonical link points to relun.chat, so search engines treat relun.chat as the real one.
+4. After launch, add relun.chat to Google Search Console and submit `https://relun.chat/sitemap.xml`.
 
 ## Coin purchases (Paystack)
 
@@ -36,6 +54,7 @@ src/data/        DTOs, models, fetch client with token refresh, Socket.IO, repos
 src/navigation/  Stack (slide transitions), shell (MainViewModel), MainFlow, AppActions
 src/components/  Buttons, inputs, visuals, controls (sheets, dialogs, toasts, rows)
 src/screens/     auth, onboarding, discover, profile, match, messages, chat, dates, me, settings, sheets
+src/site/        the public pages at relun.chat (web only; no Android counterpart)
 src/theme.ts     Colours, segment accents, type scale (same values as Android ui/theme)
 ```
 

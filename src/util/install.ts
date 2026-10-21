@@ -27,7 +27,10 @@ export const isStandalone = (): boolean =>
 export const isIos = (): boolean =>
   /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
 
-/** Call once before React renders: the prompt event can fire before any screen mounts. */
+/**
+ * Call once before React renders: the prompt event can fire before any screen mounts.
+ * Both the app and the public site call it, so either can install and register the worker.
+ */
 export function initInstall() {
   window.addEventListener('beforeinstallprompt', (e) => {
     e.preventDefault();
@@ -56,10 +59,15 @@ const currentMode = (): InstallMode => {
 };
 
 export const useInstallMode = (): InstallMode =>
-  useSyncExternalStore((l) => {
-    listeners.add(l);
-    return () => listeners.delete(l);
-  }, currentMode);
+  useSyncExternalStore(
+    (l) => {
+      listeners.add(l);
+      return () => listeners.delete(l);
+    },
+    currentMode,
+    // The prerendered public pages can't know the device; they start as 'manual'.
+    () => 'manual',
+  );
 
 /** Shows the browser's install dialog. Resolves true if the user accepted. */
 export async function promptInstall(): Promise<boolean> {

@@ -1,0 +1,6 @@
+# The app at /app/ is crawlable but carries noindex, so it stays out of search
+# results. (Blocking it here would hide that noindex from crawlers.)
+User-agent: *
+Allow: /
+
+Sitemap: https://relun.chat/sitemap.xml

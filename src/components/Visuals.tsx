@@ -1,35 +1,10 @@
 import { useEffect, useState, type CSSProperties, type ReactNode } from 'react';
-import { RelunColors, SegmentColorSets, T } from '../theme';
+import { RelunColors, T } from '../theme';
 import { formatCoins } from '../util/format';
 import { Icon } from './Icon';
 import { useSegment } from './segment';
 
-let ringsId = 0;
-
-/**
- * The Relun mark: a rose ring (Relationship) linked with an orange one (Fun).
- * Same drawing as the launcher icon and favicon; `width` is the width of both rings.
- */
-export function RingsMark({ width, style }: { width: number; style?: CSSProperties }) {
-  const [clip] = useState(() => `rings-top-${++ringsId}`);
-  const rose = SegmentColorSets.relationship.fill;
-  const orange = SegmentColorSets.fun.fill;
-  return (
-    <svg width={width} height={(width * 51) / 73} viewBox="17.5 28.5 73 51" aria-hidden style={{ display: 'block', flexShrink: 0, ...style }}>
-      <defs>
-        <clipPath id={clip}>
-          <path d="M43 0H108V54H43Z" />
-        </clipPath>
-      </defs>
-      <g fill="none" strokeWidth={9}>
-        <circle cx={43} cy={54} r={21} stroke={rose} />
-        <circle cx={65} cy={54} r={21} stroke={orange} />
-        {/* Linked: rose passes over orange at the top crossing, under it at the bottom. */}
-        <circle cx={43} cy={54} r={21} stroke={rose} clipPath={`url(#${clip})`} />
-      </g>
-    </svg>
-  );
-}
+export { RingsMark } from './Brand';
 
 /** The single coin mark: a gold disc with a star. */
 export function CoinIcon({ size = 24 }: { size?: number }) {

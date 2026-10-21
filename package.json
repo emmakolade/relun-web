@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "vite",
     "dev:phone": "vite --host --mode phone",
-    "build": "tsc -b && vite build",
+    "build": "tsc -b && vite build && vite build --ssr src/site/server.tsx --outDir dist-ssr && node scripts/prerender.mjs",
     "preview": "vite preview",
     "typecheck": "tsc -b"
   },

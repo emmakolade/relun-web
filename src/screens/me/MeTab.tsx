@@ -11,6 +11,7 @@ import { useAppActions } from '../../navigation/actions';
 import { RelunColors, T } from '../../theme';
 import { formatCoins } from '../../util/format';
 import { compressForUpload, pickImage } from '../../util/images';
+import { openSitePage, SitePages } from '../../util/sitePages';
 import { TabBarClearance, TabSurface, TabTitle } from '../main/TabCommon';
 
 /** Android BuildConfig.VERSION_NAME / VERSION_CODE. */
@@ -356,8 +357,8 @@ export function MeTab() {
               }
             />
             <ListRow title="Settings" onClick={actions.openSettings} leading={<RowIcon icon="settings" />} />
-            <ListRow title="Help & Support" onClick={() => vm.soon()} leading={<RowIcon icon="help" />} />
-            <ListRow title="Privacy Policy" onClick={() => vm.soon()} leading={<RowIcon icon="description" />} />
+            <ListRow title="Help & Support" onClick={() => openSitePage(SitePages.help)} leading={<RowIcon icon="help" />} />
+            <ListRow title="Privacy Policy" onClick={() => openSitePage(SitePages.privacy)} leading={<RowIcon icon="description" />} />
             <ListRow title="About" onClick={() => vm.soon(VERSION_LABEL)} leading={<RowIcon icon="info" />} divider={false} />
           </RowGroup>
         </div>

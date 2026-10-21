@@ -2,6 +2,7 @@
 import { InkButton /* , OutlineButton */ } from '../../components/Buttons';
 import { RingsMark } from '../../components/Visuals';
 import { Pacifico, RelunColors, T } from '../../theme';
+import { SitePages } from '../../util/sitePages';
 
 export function WelcomeScreen(props: { onPhone: () => void; onEmail: () => void }) {
   const strong = { color: RelunColors.Ink, fontWeight: 600 };
@@ -32,8 +33,15 @@ export function WelcomeScreen(props: { onPhone: () => void; onEmail: () => void 
         */}
         <InkButton text="Continue with Email" onClick={props.onEmail} leadingIcon="mail" leadingIconOutline />
         <p style={{ ...T.bodySmall, fontSize: 12, color: RelunColors.Muted, textAlign: 'center', width: '100%' }}>
-          By continuing you agree to our <span style={strong}>Terms of Service</span> and{' '}
-          <span style={strong}>Privacy Policy</span>.
+          By continuing you agree to our{' '}
+          <a href={SitePages.terms} target="_blank" rel="noopener" style={strong}>
+            Terms of Service
+          </a>{' '}
+          and{' '}
+          <a href={SitePages.privacy} target="_blank" rel="noopener" style={strong}>
+            Privacy Policy
+          </a>
+          .
         </p>
       </div>
     </div>

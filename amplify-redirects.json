@@ -1,0 +1,17 @@
+[
+  { "source": "/code/<*>", "target": "/app/code/<*>", "status": "301", "condition": null },
+  { "source": "/chat/<*>", "target": "/app/chat/<*>", "status": "301", "condition": null },
+  { "source": "/person/<*>", "target": "/app/person/<*>", "status": "301", "condition": null },
+  { "source": "/notifications", "target": "/app/notifications", "status": "301", "condition": null },
+  { "source": "/settings", "target": "/app/settings", "status": "301", "condition": null },
+  { "source": "/blocked", "target": "/app/blocked", "status": "301", "condition": null },
+  { "source": "/edit-profile", "target": "/app/edit-profile", "status": "301", "condition": null },
+  { "source": "/views", "target": "/app/views", "status": "301", "condition": null },
+  { "source": "/details", "target": "/app/details", "status": "301", "condition": null },
+  { "source": "/location", "target": "/app/location", "status": "301", "condition": null },
+  { "source": "/photos", "target": "/app/photos", "status": "301", "condition": null },
+  { "source": "/youre-in", "target": "/app/youre-in", "status": "301", "condition": null },
+  { "source": "/app", "target": "/app/", "status": "301", "condition": null },
+  { "source": "/app/<*>", "target": "/app.html", "status": "200", "condition": null },
+  { "source": "/<*>", "target": "/404.html", "status": "404", "condition": null }
+]

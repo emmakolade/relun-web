@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef } from 'react';
 import { BrowserRouter, useNavigate, useParams } from 'react-router-dom';
 import { ToastHost } from './components/Controls';
 import { RingsMark } from './components/Visuals';
@@ -7,7 +7,6 @@ import { useApp } from './data/store';
 import { MainFlow } from './navigation/MainFlow';
 import { Stack, useBack } from './navigation/Stack';
 import { CodeSignInScreen } from './screens/auth/CodeSignInScreen';
-import { LandingPage } from './screens/landing/LandingPage';
 import { WelcomeScreen } from './screens/auth/WelcomeScreen';
 import { OnboardingFlow } from './screens/onboarding/OnboardingFlow';
 import { segmentColors } from './theme';
@@ -17,43 +16,36 @@ import { isStandalone } from './util/install';
  * The whole app. Auth state picks one of three trees (signed out, onboarding,
  * signed in); the user's segment picks the accent colours for all of them.
  * Port of Android RelunRoot.
+ *
+ * The app lives under /app/; the public pages at / are src/site. Routes inside
+ * stay as they were ("/chat/:userId" is served at /app/chat/:userId).
  */
 export function App() {
   return (
-    <BrowserRouter>
+    <BrowserRouter basename="/app">
       <Shell />
     </BrowserRouter>
   );
 }
 
-/**
- * Every signed-out visitor arriving at / in a browser sees the full-width
- * landing page first, including after signing out. "Continue on web" hides it
- * until the next visit. Signed-in users, the installed app and deep links go
- * straight to the phone column.
- */
 function Shell() {
   const authKind = useApp((s) => s.auth.kind);
-  const signedOut = authKind === 'signedOut';
-  const [landing, setLanding] = useState(() => window.location.pathname === '/' && !isStandalone());
 
   useEffect(() => {
     void auth.bootstrap();
   }, []);
 
-  // Signing out lands back on /, so greet them with the landing page again.
-  // Only a real sign-out: the first load also goes loading -> signedOut, and a
-  // deep link like /code/email must keep its screen.
+  // Signing out in a browser tab goes back to the public home page, as it did
+  // when that page lived inside the app. Only a real sign-out: the first load
+  // also goes loading -> signedOut. The installed app stays on its Welcome screen.
   const lastKind = useRef(authKind);
   useEffect(() => {
     const was = lastKind.current;
     lastKind.current = authKind;
-    if (authKind === 'signedOut' && (was === 'signedIn' || was === 'onboarding') && !isStandalone()) setLanding(true);
+    if (authKind === 'signedOut' && (was === 'signedIn' || was === 'onboarding') && !isStandalone()) {
+      window.location.assign('/');
+    }
   }, [authKind]);
-
-  if (landing && signedOut) {
-    return <LandingPage onContinue={() => setLanding(false)} />;
-  }
 
   return (
     <div className="app-frame">
