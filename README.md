@@ -43,6 +43,13 @@ Android sells coins through Google Play; the web uses Paystack.
 
 The flow works like this. The backend creates the transaction (it sets the amount, so the client can't change it), the app opens the Paystack popup, and coins are credited after the backend verifies the charge with Paystack. The webhook credits the coins if the tab closes before that happens. Either path credits a purchase only once.
 
+## Errors and analytics (Sentry, PostHog)
+
+Both are off unless their keys are set in `.env` at build time:
+
+- `VITE_SENTRY_DSN`: errors from the app (`src/util/monitoring.ts`). No session replay, no default PII; auth headers and auth request bodies are stripped, and users are tagged by id only.
+- `VITE_POSTHOG_KEY` (and optionally `VITE_POSTHOG_HOST`, default `https://us.i.posthog.com`): pageviews plus the explicit events in `src/util/analytics.ts` (`signed_up`, `signed_in`, `profile_completed`, `like_sent`, `match_created`, `message_sent`, `plus_purchased`, `coins_purchased`; same names as Android). No autocapture or session recording. Event properties never carry names, contact details or message text. The public site sends pageviews only.
+
 ## Not on the web (yet)
 
 - Push notifications. Real-time messages arrive over Socket.IO while the tab is open.

@@ -320,3 +320,37 @@ export type ApiErrorBody = {
   required?: number;
   balance?: number;
 };
+
+// ---------- Admin (web only; GET api/admin/stats) ----------
+
+export type AdminTrendDay = { day: string; signups: number; activeUsers: number; matches: number; messages: number };
+
+type AdminRevenue = { payments: number; byCurrency: Record<string, number> };
+type AdminCoins = { purchases: number; coins: number };
+
+export type AdminStats = {
+  generatedAt: string;
+  timezone: string;
+  live: { online: number; inChats: number };
+  users: {
+    total: number;
+    completedProfiles: number;
+    signupsToday: number;
+    activeToday: number;
+    active24h: number;
+    active7d: number;
+    active30d: number;
+  };
+  today: { likes: number; matches: number; messages: number; datePosts: number; dateRequests: number; reports: number };
+  money: {
+    plusActive: number;
+    plusBySource: Record<string, number>;
+    plusToday: AdminRevenue;
+    plusMonth: AdminRevenue;
+    coinsToday: AdminCoins;
+    coinsMonth: AdminCoins;
+  };
+  safety: { openReports: number };
+  server: { uptimeSeconds: number; memoryMb: number; heapMb: number; load: number[]; cpus: number; node: string };
+  trend: AdminTrendDay[];
+};

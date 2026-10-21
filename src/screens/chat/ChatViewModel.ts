@@ -3,6 +3,7 @@ import type { ChatMessage, MessageRequest, MessageStatus, Person } from '../../d
 import { chat, people } from '../../data/repositories';
 import type { SocketEvent } from '../../data/socket';
 import { messenger, useApp } from '../../data/store';
+import { track } from '../../util/analytics';
 
 /** Port of Android ChatViewModel. */
 
@@ -147,6 +148,7 @@ export function useChatViewModel(userId: string, initialName: string) {
         setStatus(clientId, 'failed');
         return;
       }
+      track('message_sent', { kind: 'chat' });
       // No echo within 10s means it didn't land.
       later(10_000, () => {
         const still = ref.current.messages.find((m) => m.clientId === clientId);
@@ -223,6 +225,8 @@ export function useChatViewModel(userId: string, initialName: string) {
           });
           if (!incoming.mine) chat.socket.markRead(userId);
           if (replied) people.emit({ type: 'matched', userId });
+          // Counted once, on the side whose reply made the match.
+          if (replied && incoming.mine) track('match_created', { via: 'reply' });
           break;
         }
         case 'typing':

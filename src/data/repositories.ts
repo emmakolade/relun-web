@@ -17,6 +17,7 @@ import { api, ApiException, setSessionExpiredHandler } from './network';
 import { session } from './session';
 import { chatSocket } from './socket';
 import { getApp, setApp, type MyProfile, type OnboardingStart } from './store';
+import { track } from '../util/analytics';
 import { Emitter } from '../util/emitter';
 import { webPush } from '../util/webPush';
 
@@ -60,8 +61,11 @@ export const auth = {
     const res = await api.verifyOtp({ ...contactBody(method, contact), otp: code });
     session.saveSignIn(res.accessToken, res.refreshToken, res.user.id, method);
     setApp({ segment: segmentFrom(res.user.profile?.segment) });
+    const needsProfile = res.needsProfileCompletion ?? true;
+    // A new account still has its profile to fill in.
+    track(needsProfile ? 'signed_up' : 'signed_in', { method });
     return {
-      needsProfile: res.needsProfileCompletion ?? true,
+      needsProfile,
       needsPhotos: (res.photoCount ?? 0) < MIN_PHOTOS,
     };
   },
@@ -174,7 +178,10 @@ export const profile = {
     setApp({ me });
     return me;
   },
-  completeProfile: (body: D.CompleteProfileBody) => api.completeProfile(body),
+  async completeProfile(body: D.CompleteProfileBody) {
+    await api.completeProfile(body);
+    track('profile_completed');
+  },
   updateLocation: (latitude: number, longitude: number, city: string | null) =>
     api.updateProfile({ latitude, longitude, city: city ?? undefined }),
   updateCity: (city: string) => api.updateProfile({ city }),
@@ -278,7 +285,11 @@ export const people = {
       setApp({ wallet: { ...wallet, likes: { ...wallet.likes, left: res.likesLeft, resetAt: parseDate(res.likesResetAt) } } });
     }
     const mutual = res.isMutual ?? false;
-    if (mutual && !res.alreadyLiked) people.newMatches.emit({ ...person, isMatch: true, liked: true });
+    if (!res.alreadyLiked) track('like_sent');
+    if (mutual && !res.alreadyLiked) {
+      track('match_created', { via: 'like' });
+      people.newMatches.emit({ ...person, isMatch: true, liked: true });
+    }
     people.events.emit({ type: 'liked', userId: person.id, isMatch: mutual });
     return mutual;
   },
@@ -366,6 +377,8 @@ export const chat = {
     // The free allowance changed; the server has the count.
     void coins.refresh().catch(() => {});
     const matched = res.matched ?? false;
+    track('message_sent', { kind: 'request' });
+    if (matched) track('match_created', { via: 'request' });
     if (matched) {
       people.emit({ type: 'liked', userId: person.id, isMatch: true });
       people.emit({ type: 'matched', userId: person.id });
@@ -422,6 +435,7 @@ export const coins = {
   async confirmPaystack(reference: string) {
     const res = await api.paystackVerify(reference);
     updateWallet({ balance: res.balance ?? 0 });
+    if (res.credited) track('coins_purchased', { coins: res.credited, store: 'paystack' });
     return res.credited ?? 0;
   },
 };
@@ -459,6 +473,7 @@ export const plus = {
   /** Hands a Paystack reference to the server, which verifies it and starts or extends Plus. */
   async confirmPaystack(reference: string) {
     updateWallet(toEntitlements(await api.plusVerify(reference)));
+    track('plus_purchased', { store: 'paystack' });
     // Plus includes Likes & Views; the wallet says so.
     await coins.refresh().catch(() => {});
     people.emit({ type: 'plusChanged' });

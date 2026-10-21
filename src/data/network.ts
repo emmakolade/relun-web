@@ -203,6 +203,9 @@ export const api = {
   report: (userId: string, reason = 'other', details?: string | null) =>
     request<unknown>('POST', `api/safety/reports/${userId}`, { reason, details: details ?? undefined }),
 
+  // ---------- Admin (web only) ----------
+  adminStats: () => request<D.AdminStats>('GET', 'api/admin/stats'),
+
   // ---------- Settings ----------
   settings: () => request<D.SettingsResponse>('GET', 'api/settings'),
   updateSettings: (body: D.SettingsPatch) => request<D.SettingsResponse>('PATCH', 'api/settings', body),

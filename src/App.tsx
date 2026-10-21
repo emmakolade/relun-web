@@ -1,5 +1,5 @@
-import { useEffect, useRef } from 'react';
-import { BrowserRouter, useNavigate, useParams } from 'react-router-dom';
+import { lazy, Suspense, useEffect, useRef } from 'react';
+import { BrowserRouter, useLocation, useNavigate, useParams } from 'react-router-dom';
 import { ToastHost } from './components/Controls';
 import { RingsMark } from './components/Visuals';
 import { auth } from './data/repositories';
@@ -11,6 +11,9 @@ import { WelcomeScreen } from './screens/auth/WelcomeScreen';
 import { OnboardingFlow } from './screens/onboarding/OnboardingFlow';
 import { segmentColors } from './theme';
 import { isStandalone } from './util/install';
+
+// Team-only, so it stays out of the main bundle.
+const AdminScreen = lazy(() => import('./screens/admin/AdminScreen').then((m) => ({ default: m.AdminScreen })));
 
 /**
  * The whole app. Auth state picks one of three trees (signed out, onboarding,
@@ -60,6 +63,7 @@ function Root() {
   const state = useApp((s) => s.auth);
   const segment = useApp((s) => s.segment);
   const navigate = useNavigate();
+  const { pathname } = useLocation();
 
   // CSS variables for the few styles that can't take inline colours (sliders).
   useEffect(() => {
@@ -96,6 +100,14 @@ function Root() {
     case 'onboarding':
       return <OnboardingFlow key={state.start} start={state.start} />;
     case 'signedIn':
+      // /app/admin sits outside the tabbed app; the backend decides who sees data.
+      if (pathname === '/admin') {
+        return (
+          <Suspense fallback={null}>
+            <AdminScreen onBack={() => navigate('/', { replace: true })} />
+          </Suspense>
+        );
+      }
       return <MainFlow />;
   }
 }

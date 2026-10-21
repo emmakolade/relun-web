@@ -30,6 +30,8 @@ if (isOldAppPath(pathname)) {
   window.location.replace('/app/');
 } else {
   initInstall();
+  // Pageviews only, for marketing traffic; loaded on demand so the site bundle stays small.
+  if (import.meta.env.VITE_POSTHOG_KEY) void import('../util/analytics').then((a) => a.initAnalytics());
   const page = pageFor(pathname);
   const tree = (
     <StrictMode>
