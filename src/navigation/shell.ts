@@ -6,6 +6,8 @@ import { ApiException } from '../data/network';
 import { api } from '../data/network';
 import { chat, coins, people, plus, safety } from '../data/repositories';
 import { getApp, messenger } from '../data/store';
+import type { CoinsContext } from '../screens/sheets/Sheets';
+import { track } from '../util/analytics';
 import { Emitter } from '../util/emitter';
 import { openPaystack } from '../util/paystack';
 import { markPushAsked, shouldAskForPush, type PushAskMode, type PushAskReason } from '../util/pushAsk';
@@ -55,6 +57,8 @@ type ShellState = {
   showMyDates: number;
   /** Bumped to ask the Messages tab to show "Likes You". */
   showLikes: number;
+  /** The prompt that opened the Plus sheet, e.g. "coins_sheet"; tags plus_purchased. */
+  plusSource: string | null;
 };
 
 const initial: ShellState = {
@@ -70,6 +74,7 @@ const initial: ShellState = {
   sendingRequest: false,
   showMyDates: 0,
   showLikes: 0,
+  plusSource: null,
 };
 
 export const useShell = create<ShellState>(() => initial);
@@ -96,9 +101,14 @@ export const shell = {
     void coins.refresh().catch(() => {});
   },
   openInsights: () => set({ sheet: { kind: 'insights' } }),
-  openPlus() {
-    set({ sheet: { kind: 'plus' } });
+  openPlus(source: string | null = null) {
+    set({ sheet: { kind: 'plus' }, plusSource: typeof source === 'string' ? source : null });
     void coins.refresh().catch(() => {});
+  },
+  /** The Plus card on the coins sheet, tagged with why the coins sheet opened. */
+  openPlusFromCoins(context: CoinsContext) {
+    track('plus_upsell_tapped', { source: 'coins_sheet', context });
+    shell.openPlus('coins_sheet');
   },
   openMore: (person: Person) => set({ sheet: { kind: 'more', person } }),
   closeSheet() {
@@ -227,7 +237,7 @@ export const shell = {
         set({ plusBusy: false });
         return;
       }
-      await plus.confirmPaystack(result.reference);
+      await plus.confirmPaystack(result.reference, planId, get().plusSource);
       set({ plusBusy: false, sheet: null });
       messenger.success('Welcome to Relun Plus');
     } catch (e) {

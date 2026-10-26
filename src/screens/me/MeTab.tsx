@@ -10,7 +10,7 @@ import { messenger, useApp } from '../../data/store';
 import { useAppActions } from '../../navigation/actions';
 import { RelunColors, T } from '../../theme';
 import { formatCoins } from '../../util/format';
-import { compressForUpload, pickImage } from '../../util/images';
+import { compressForUpload, PhotoReadError, pickImage } from '../../util/images';
 import { openSitePage, SitePages } from '../../util/sitePages';
 import { TabBarClearance, TabSurface, TabTitle } from '../main/TabCommon';
 
@@ -56,13 +56,15 @@ function useMeViewModel() {
   const upload = async (slot: number, file: File, replace: Photo | null) => {
     setUploading((u) => new Set(u).add(slot));
     let bytes: Blob | null = null;
+    let readError = 'We couldn’t read that photo. Try another one.';
     try {
       bytes = await compressForUpload(file);
-    } catch {
+    } catch (e) {
       bytes = null;
+      if (e instanceof PhotoReadError) readError = e.message;
     }
     if (!bytes) {
-      messenger.error('We couldn’t read that photo. Try another one.');
+      messenger.error(readError);
     } else {
       try {
         if (replace) await profile.replacePhoto(replace.id, bytes);

@@ -121,9 +121,10 @@ const q = (params: Record<string, string | number | null | undefined>) => {
   return s ? `?${s}` : '';
 };
 
-const photoForm = (field: string, jpeg: Blob) => {
+const photoForm = (field: string, image: Blob) => {
   const form = new FormData();
-  form.append(field, jpeg, 'photo.jpg');
+  // Usually a JPEG; an original file keeps its own name so the server can tell its type.
+  form.append(field, image, image instanceof File && image.name ? image.name : 'photo.jpg');
   return form;
 };
 

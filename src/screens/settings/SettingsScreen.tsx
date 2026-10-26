@@ -8,6 +8,7 @@ import type { BlockedUserDto, SettingsDto, SettingsPatch } from '../../data/dtos
 import { auth, profile, safety, settings as settingsRepo } from '../../data/repositories';
 import { messenger, useApp } from '../../data/store';
 import { useAppActions } from '../../navigation/actions';
+import { genderFromWire, oppositeGender } from '../onboarding/OnboardingViewModel';
 import { RelunColors, T } from '../../theme';
 import { formatCoins } from '../../util/format';
 import { location } from '../../util/location';
@@ -78,6 +79,8 @@ export function SettingsScreen() {
 
   const filtersHint = () => messenger.info('Change this from the filters button on Discover');
   const top = settings.ageMax >= 99 ? '70+' : String(settings.ageMax);
+  const gender = genderFromWire(settings.gender);
+  const showEveryone = settings.showMe === 'everyone';
 
   /**
    * Android opens the app's system settings. On the web a tap asks the browser
@@ -121,6 +124,19 @@ export function SettingsScreen() {
             <Section title="Discovery">
               <ListRow title="Age range" onClick={filtersHint} value={`${settings.ageMin}–${top}`} />
               <ListRow title="Maximum distance" onClick={filtersHint} value={`${settings.maxDistanceKm} km`} />
+              {gender && (
+                <ToggleRow
+                  title="Show everyone"
+                  checked={showEveryone}
+                  subtitle={
+                    showEveryone ? 'You see both men and women' : `You only see ${oppositeGender(gender).plural.toLowerCase()}`
+                  }
+                  onToggle={() => {
+                    const showMe = showEveryone ? 'opposite' : 'everyone';
+                    patch({ showMe }, { ...settings, showMe });
+                  }}
+                />
+              )}
               <ListRow
                 title="Looking for"
                 onClick={null}

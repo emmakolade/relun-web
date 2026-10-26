@@ -15,6 +15,7 @@ export type AnalyticsEvent =
   | 'match_created'
   | 'message_sent'
   | 'plus_purchased'
+  | 'plus_upsell_tapped'
   | 'coins_purchased';
 
 const key = import.meta.env.VITE_POSTHOG_KEY as string | undefined;

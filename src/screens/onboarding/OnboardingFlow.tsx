@@ -19,6 +19,7 @@ import {
   GENDERS,
   nameError,
   OnboardingContext,
+  oppositeGender,
   photosValid,
   uploadedPhotos,
   useOnboardingViewModel,
@@ -205,7 +206,6 @@ function SegmentStep({ onNext }: { onNext: () => void }) {
 
 function DetailsStep({ onNext }: { onNext: () => void }) {
   const vm = useOnboardingViewModel();
-  const s = useSegment();
   const nError = nameError(vm);
   const dError = dobError(vm);
   const numeric = { inputMode: 'numeric' as const, textAlign: 'center' as const, isError: dError != null };
@@ -271,36 +271,23 @@ function DetailsStep({ onNext }: { onNext: () => void }) {
       </LabeledField>
       <LabeledField label="Gender">
         <div role="radiogroup" aria-label="Gender" style={{ display: 'flex', gap: 8 }}>
-          {GENDERS.map((g) => {
-            const on = vm.gender?.wire === g.wire;
-            return (
-              <button
-                key={g.wire}
-                type="button"
-                role="radio"
-                aria-checked={on}
-                className="press"
-                onClick={() => vm.setGender(g)}
-                style={{
-                  flex: 1,
-                  height: 50,
-                  borderRadius: 16,
-                  background: on ? s.tint : '#FFFFFF',
-                  border: `1.5px solid ${on ? s.fill : RelunColors.Border}`,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  ...T.labelLarge,
-                  fontSize: 16,
-                  color: on ? s.text : RelunColors.Ink,
-                }}
-              >
-                {g.label}
-              </button>
-            );
-          })}
+          {GENDERS.map((g) => (
+            <ChoicePill key={g.wire} label={g.label} on={vm.gender?.wire === g.wire} onClick={() => vm.setGender(g)} />
+          ))}
         </div>
       </LabeledField>
+      {vm.gender && (
+        <LabeledField label="Show me">
+          <div role="radiogroup" aria-label="Show me" style={{ display: 'flex', gap: 8 }}>
+            <ChoicePill
+              label={oppositeGender(vm.gender).plural}
+              on={vm.showMe === 'opposite'}
+              onClick={() => vm.setShowMe('opposite')}
+            />
+            <ChoicePill label="Everyone" on={vm.showMe === 'everyone'} onClick={() => vm.setShowMe('everyone')} />
+          </div>
+        </LabeledField>
+      )}
       <LabeledField label={vm.signedInByPhone ? 'Email · for account recovery' : 'Phone number · for account recovery'}>
         <RelunTextField
           value={vm.recovery}
@@ -336,6 +323,34 @@ function DetailsStep({ onNext }: { onNext: () => void }) {
 }
 
 // ---------- Step 3: location ----------
+
+function ChoicePill({ label, on, onClick }: { label: string; on: boolean; onClick: () => void }) {
+  const s = useSegment();
+  return (
+    <button
+      type="button"
+      role="radio"
+      aria-checked={on}
+      className="press"
+      onClick={onClick}
+      style={{
+        flex: 1,
+        height: 50,
+        borderRadius: 16,
+        background: on ? s.tint : '#FFFFFF',
+        border: `1.5px solid ${on ? s.fill : RelunColors.Border}`,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        ...T.labelLarge,
+        fontSize: 16,
+        color: on ? s.text : RelunColors.Ink,
+      }}
+    >
+      {label}
+    </button>
+  );
+}
 
 function LocationStep({ onNext }: { onNext: () => void }) {
   const s = useSegment();

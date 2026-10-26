@@ -61,6 +61,8 @@ function start() {
       if (app.settings !== prev.settings) {
         const s = app.settings;
         set(() => ({ maxDistanceKm: s.maxDistanceKm, ageMin: s.ageMin, ageMax: s.ageMax }));
+        // "Show me" changes in Settings, so reload the feed when it does.
+        if (s.showMe !== prev.settings.showMe) load();
       }
       if (app.auth.kind !== 'signedIn') stop();
     }),

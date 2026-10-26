@@ -114,6 +114,7 @@ export type CompleteProfileBody = {
   dateOfBirth: string;
   gender: string;
   segment: string;
+  showMe?: string;
   bio?: string;
   email?: string;
   phone?: string;
@@ -266,6 +267,10 @@ export type SettingsDto = {
   ageMin: number;
   ageMax: number;
   segment: string;
+  /** 'opposite' or 'everyone'. */
+  showMe: string;
+  /** The user's own gender, read-only here; labels "Show me" as Men or Women. */
+  gender?: string | null;
 };
 
 export const defaultSettings: SettingsDto = {
@@ -278,10 +283,12 @@ export const defaultSettings: SettingsDto = {
   ageMin: 18,
   ageMax: 99,
   segment: 'relationship',
+  showMe: 'opposite',
+  gender: null,
 };
 
 export type SettingsResponse = { settings: Partial<SettingsDto> };
-export type SettingsPatch = Partial<Omit<SettingsDto, 'segment'>>;
+export type SettingsPatch = Partial<Omit<SettingsDto, 'segment' | 'gender'>>;
 
 // ---------- Notifications ----------
 

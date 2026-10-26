@@ -19,15 +19,22 @@ const priceOf = (pkg: CoinPackageDto): string =>
 
 const center: CSSProperties = { display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12, width: '100%' };
 
+/** Why the coins sheet opened, so the Plus card can lead with what they were after. */
+export type CoinsContext = 'insights' | 'request' | 'general';
+
 export function CoinsSheet(props: {
   wallet: Wallet;
+  context: CoinsContext;
   selected: number;
   buying: boolean;
   onSelect: (i: number) => void;
   onBuy: () => void;
+  onPlus: () => void;
   onDismiss: () => void;
 }) {
-  const { wallet, selected, buying, onSelect, onBuy, onDismiss } = props;
+  const { wallet, context, selected, buying, onSelect, onBuy, onPlus, onDismiss } = props;
+  // Plus covers what most people top up for; offer it, but keep Buy the main action.
+  const weekly = wallet.plans.find((p) => p.id === 'weekly') ?? wallet.plans[0];
   const seg = useSegment();
   const rows: CoinPackageDto[][] = [];
   wallet.packages.forEach((p, i) => (i % 2 === 0 ? rows.push([p]) : rows[rows.length - 1].push(p)));
@@ -118,8 +125,24 @@ export function CoinsSheet(props: {
       ))}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
         <Perk icon="mark_chat_unread" text={`Message someone without matching · ${wallet.messageRequestCost} coins`} />
-        <Perk icon="visibility" text={`See Likes & Views · ${wallet.insights7Cost} coins / 7 days`} />
+        <Perk
+          icon="visibility"
+          text={`See Likes & Views · ${wallet.insights7Cost} coins / 7 days${wallet.plus ? '' : ' or included in Plus'}`}
+        />
       </div>
+      {!wallet.plus && weekly && (
+        <PlusUpsellCard
+          subtitle={
+            context === 'insights'
+              ? 'Likes & Views included · unlimited likes'
+              : context === 'request'
+                ? `${wallet.plusPerks.monthlyRequests} free message requests a month · unlimited likes`
+                : 'Unlimited likes · Likes & Views included'
+          }
+          price={`from ${formatMoney(weekly.amount, weekly.currency)}/${weekly.id === 'weekly' ? 'wk' : 'mo'}`}
+          onClick={onPlus}
+        />
+      )}
       <PrimaryButton
         text={pkg ? `Buy ${formatCoins(pkg.coins)} coins · ${priceOf(pkg)}` : 'Loading packages…'}
         onClick={onBuy}
@@ -131,6 +154,51 @@ export function CoinsSheet(props: {
         Prices in your local currency. Charged through Paystack.
       </span>
     </RelunSheet>
+  );
+}
+
+function PlusUpsellCard({ subtitle, price, onClick }: { subtitle: string; price: string; onClick: () => void }) {
+  const seg = useSegment();
+  return (
+    <button
+      type="button"
+      className="press"
+      onClick={onClick}
+      style={{
+        width: '100%',
+        display: 'flex',
+        alignItems: 'center',
+        gap: 12,
+        borderRadius: 18,
+        background: seg.tint,
+        border: `1px solid ${seg.fill}59`,
+        padding: '12px 14px',
+        textAlign: 'left',
+      }}
+    >
+      <span
+        style={{
+          width: 36,
+          height: 36,
+          flexShrink: 0,
+          borderRadius: 12,
+          background: seg.fill,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}
+      >
+        <Icon name="workspace_premium" size={20} color={seg.onFill} />
+      </span>
+      <span style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 2 }}>
+        <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <span style={{ ...T.titleSmall, color: seg.text, flex: 1 }}>Or get Relun Plus</span>
+          <span style={{ ...T.labelMedium, color: seg.text, whiteSpace: 'nowrap' }}>{price}</span>
+        </span>
+        <span style={{ ...T.bodySmall, fontSize: 13, color: RelunColors.Body }}>{subtitle}</span>
+      </span>
+      <Icon name="chevron_right" size={20} color={seg.text} />
+    </button>
   );
 }
 

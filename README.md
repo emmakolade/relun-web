@@ -48,7 +48,7 @@ The flow works like this. The backend creates the transaction (it sets the amoun
 Both are off unless their keys are set in `.env` at build time:
 
 - `VITE_SENTRY_DSN`: errors from the app (`src/util/monitoring.ts`). No session replay, no default PII; auth headers and auth request bodies are stripped, and users are tagged by id only.
-- `VITE_POSTHOG_KEY` (and optionally `VITE_POSTHOG_HOST`, default `https://us.i.posthog.com`): pageviews plus the explicit events in `src/util/analytics.ts` (`signed_up`, `signed_in`, `profile_completed`, `like_sent`, `match_created`, `message_sent`, `plus_purchased`, `coins_purchased`; same names as Android). No autocapture or session recording. Event properties never carry names, contact details or message text. The public site sends pageviews only.
+- `VITE_POSTHOG_KEY` (and optionally `VITE_POSTHOG_HOST`, default `https://us.i.posthog.com`): pageviews plus the explicit events in `src/util/analytics.ts` (`signed_up`, `signed_in`, `profile_completed`, `like_sent`, `match_created`, `message_sent`, `plus_purchased` (with `source` when a prompt led to it), `plus_upsell_tapped`, `coins_purchased`; same names as Android). No autocapture or session recording. Event properties never carry names, contact details or message text. The public site sends pageviews only.
 
 ## Not on the web (yet)
 

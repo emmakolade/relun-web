@@ -4,14 +4,21 @@ import type { Photo, Segment } from '../../data/models';
 import { auth, calculateAge, MAX_PHOTOS, MIN_PHOTOS, people, profile } from '../../data/repositories';
 import { session } from '../../data/session';
 import { getApp, messenger } from '../../data/store';
-import { compressForUpload } from '../../util/images';
+import { compressForUpload, PhotoReadError } from '../../util/images';
 import { location, type Coordinates } from '../../util/location';
 
-export type Gender = { label: string; wire: string };
+export type Gender = { label: string; wire: string; plural: string };
 export const GENDERS: Gender[] = [
-  { label: 'Female', wire: 'female' },
-  { label: 'Male', wire: 'male' },
+  { label: 'Female', wire: 'female', plural: 'Women' },
+  { label: 'Male', wire: 'male', plural: 'Men' },
 ];
+
+export const genderFromWire = (wire: string | null | undefined): Gender | null =>
+  GENDERS.find((g) => g.wire === wire) ?? null;
+export const oppositeGender = (g: Gender): Gender => GENDERS.find((x) => x.wire !== g.wire)!;
+
+/** Who Discover shows. 'opposite' is the default and is picked for the user from their gender. */
+export type ShowMe = 'opposite' | 'everyone';
 
 export type LocationStatus = 'idle' | 'loading' | 'granted' | 'denied';
 
@@ -25,6 +32,7 @@ export type OnboardingState = {
   month: string;
   year: string;
   gender: Gender | null;
+  showMe: ShowMe;
   recovery: string;
   bio: string;
   nameTouched: boolean;
@@ -98,6 +106,7 @@ export type OnboardingActions = {
   setMonth: (v: string) => void;
   setYear: (v: string) => void;
   setGender: (g: Gender) => void;
+  setShowMe: (v: ShowMe) => void;
   setRecovery: (v: string) => void;
   setBio: (v: string) => void;
   submitDetails: (onDone: () => void) => void;
@@ -156,6 +165,7 @@ export function createOnboardingStore(): OnboardingStore {
       month: '',
       year: '',
       gender: null,
+      showMe: 'opposite',
       recovery: '',
       bio: '',
       nameTouched: false,
@@ -179,7 +189,9 @@ export function createOnboardingStore(): OnboardingStore {
       setDay: (v) => set({ day: digits(v).slice(0, 2) }),
       setMonth: (v) => set({ month: digits(v).slice(0, 2) }),
       setYear: (v) => set({ year: digits(v).slice(0, 4) }),
-      setGender: (gender) => set({ gender }),
+      // Picking a gender pre-selects the other one under "Show me".
+      setGender: (gender) => set({ gender, showMe: 'opposite' }),
+      setShowMe: (showMe) => set({ showMe }),
       setRecovery: (v) => set({ recovery: v.slice(0, 80) }),
       setBio: (v) => set({ bio: v.slice(0, 150) }),
 
@@ -198,6 +210,7 @@ export function createOnboardingStore(): OnboardingStore {
               dateOfBirth: dateOfBirth(s)!,
               gender: s.gender!.wire,
               segment: s.segment,
+              showMe: s.showMe,
               bio: s.bio.trim() || undefined,
               email: s.signedInByPhone ? recovery?.toLowerCase() : undefined,
               phone: !s.signedInByPhone ? recovery?.replace(/[^\d+]/g, '') : undefined,
@@ -252,9 +265,9 @@ export function createOnboardingStore(): OnboardingStore {
           let jpeg: Blob;
           try {
             jpeg = await compressForUpload(file);
-          } catch {
+          } catch (e) {
             setSlot(index, EMPTY);
-            messenger.error('We couldn’t read that photo. Try another one.');
+            messenger.error(e instanceof PhotoReadError ? e.message : 'We couldn’t read that photo. Try another one.');
             return;
           }
           try {

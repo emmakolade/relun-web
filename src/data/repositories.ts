@@ -412,8 +412,8 @@ export const coins = {
         balance: res.balance ?? 0,
         insightsActive: res.insightsActive ?? false,
         messageRequestCost: res.costs?.messageRequest ?? 200,
-        insights7Cost: res.costs?.insights7 ?? 700,
-        insights30Cost: res.costs?.insights30 ?? 1500,
+        insights7Cost: res.costs?.insights7 ?? 500,
+        insights30Cost: res.costs?.insights30 ?? 1000,
         datePostCost: res.costs?.datePost ?? 100,
         packages: res.packages ?? [],
         pendingBonus: res.pendingBonus ?? null,
@@ -470,10 +470,13 @@ chatSocket.events.on((event) => {
 
 /** Relun Plus on the web: Paystack plans and one-time passes. */
 export const plus = {
-  /** Hands a Paystack reference to the server, which verifies it and starts or extends Plus. */
-  async confirmPaystack(reference: string) {
+  /**
+   * Hands a Paystack reference to the server, which verifies it and starts or extends Plus.
+   * source says which prompt led here, e.g. "coins_sheet", for plus_purchased.
+   */
+  async confirmPaystack(reference: string, plan: string, source: string | null = null) {
     updateWallet(toEntitlements(await api.plusVerify(reference)));
-    track('plus_purchased', { store: 'paystack' });
+    track('plus_purchased', { store: 'paystack', plan, ...(source ? { source } : {}) });
     // Plus includes Likes & Views; the wallet says so.
     await coins.refresh().catch(() => {});
     people.emit({ type: 'plusChanged' });

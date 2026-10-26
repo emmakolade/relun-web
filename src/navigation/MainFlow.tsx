@@ -20,8 +20,11 @@ import {
   PushAskSheet,
   WelcomeCoinsSheet,
 } from '../screens/sheets/Sheets';
-import { shell, shellNav, useShell } from './shell';
+import { shell, shellNav, useShell, type MainSheet } from './shell';
 import { Stack } from './Stack';
+
+const coinsContext = (then: MainSheet | null) =>
+  then?.kind === 'insights' ? 'insights' : then?.kind === 'request' ? 'request' : 'general';
 
 function PersonRoute() {
   const { userId = '' } = useParams();
@@ -90,10 +93,12 @@ export function MainFlow() {
       {sheet?.kind === 'coins' && (
         <CoinsSheet
           wallet={wallet}
+          context={coinsContext(sheet.then)}
           selected={state.selectedPackage}
           buying={state.buying}
           onSelect={shell.selectPackage}
           onBuy={() => void shell.buy()}
+          onPlus={() => shell.openPlusFromCoins(coinsContext(sheet.then))}
           onDismiss={shell.closeSheet}
         />
       )}
