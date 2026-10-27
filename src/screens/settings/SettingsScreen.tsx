@@ -199,6 +199,15 @@ export function SettingsScreen() {
                   patch({ notificationsEnabled: next }, { ...settings, notificationsEnabled: next });
                 }}
               />
+              <ToggleRow
+                title="Email notifications"
+                subtitle="Likes, first messages, matches and date updates"
+                checked={settings.emailNotificationsEnabled}
+                onToggle={() => {
+                  const next = !settings.emailNotificationsEnabled;
+                  patch({ emailNotificationsEnabled: next }, { ...settings, emailNotificationsEnabled: next });
+                }}
+              />
               {settings.notificationsEnabled && browserPush === 'ask' && (
                 <ListRow title="Allow notifications in this browser" onClick={() => void turnOnBrowserPush()} />
               )}

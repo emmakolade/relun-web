@@ -262,6 +262,7 @@ export type SettingsDto = {
   showAge: boolean;
   showDistance: boolean;
   notificationsEnabled: boolean;
+  emailNotificationsEnabled: boolean;
   allowMessageRequests: boolean;
   maxDistanceKm: number;
   ageMin: number;
@@ -278,6 +279,7 @@ export const defaultSettings: SettingsDto = {
   showAge: true,
   showDistance: true,
   notificationsEnabled: true,
+  emailNotificationsEnabled: true,
   allowMessageRequests: true,
   maxDistanceKm: 35,
   ageMin: 18,
