@@ -33,9 +33,9 @@ export const PAGES: SitePage[] = [
   },
   {
     path: '/pricing/',
-    title: 'Pricing: Relun Plus from ₦1,200 a Week | Relun',
+    title: 'Pricing: Relun Plus from ₦1,499 a Week | Relun',
     description:
-      'Matching and chatting on Relun are free. Relun Plus adds unlimited likes and shows who liked you, from ₦1,200 a week or ₦2,500 a month.',
+      'Matching and chatting on Relun are free. Relun Plus adds unlimited likes and shows who liked you, from ₦1,499 a week or ₦2,999 a month.',
     Page: Pricing,
     crumb: 'Pricing',
     priority: 0.8,
