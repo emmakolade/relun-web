@@ -1,7 +1,8 @@
 import { useEffect, useState, type ReactNode } from 'react';
 import { BackButton, OutlineButton } from '../../components/Buttons';
+import { ToggleRow } from '../../components/Controls';
 import { EmptyState, Shimmer } from '../../components/Visuals';
-import type { AdminStats, AdminTrendDay } from '../../data/dtos';
+import type { AdminSettings, AdminStats, AdminTrendDay } from '../../data/dtos';
 import { api, ApiException } from '../../data/network';
 import { useApp } from '../../data/store';
 import { RelunColors, T, segmentColors } from '../../theme';
@@ -104,6 +105,10 @@ function Dashboard({ stats, stale }: { stats: AdminStats; stale: boolean }) {
         </div>
       )}
 
+      <Section title="Discovery" grid={false}>
+        <DiscoverySettings />
+      </Section>
+
       <Section title="Live">
         <Tile label="Online now" value={live.online} dot />
         <Tile label="In a chat" value={live.inChats} />
@@ -152,6 +157,51 @@ function Dashboard({ stats, stale }: { stats: AdminStats; stale: boolean }) {
         <Tile label="Memory" value={`${server.memoryMb} MB`} sub={`heap ${server.heapMb} MB`} />
         <Tile label="Load (1/5/15 min)" value={server.load.join(' / ')} sub={`${server.cpus} CPU · Node ${server.node}`} />
       </Section>
+    </div>
+  );
+}
+
+/** App-wide discovery switch. Saves as soon as it's flipped and rolls back if the save fails. */
+function DiscoverySettings() {
+  const [settings, setSettings] = useState<AdminSettings | null>(null);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    api.adminSettings().then(setSettings).catch(() => setError('Couldn’t load settings.'));
+  }, []);
+
+  const toggle = () => {
+    if (!settings || saving) return;
+    const previous = settings;
+    const next = { discoverEveryone: !settings.discoverEveryone };
+    setSettings(next);
+    setSaving(true);
+    setError(null);
+    api
+      .updateAdminSettings(next)
+      .then(setSettings)
+      .catch(() => {
+        setSettings(previous);
+        setError('Couldn’t save. Try again.');
+      })
+      .finally(() => setSaving(false));
+  };
+
+  return (
+    <div style={{ background: RelunColors.Surface, border: `1px solid ${RelunColors.BorderSoft}`, borderRadius: 16, overflow: 'hidden' }}>
+      {settings ? (
+        <ToggleRow
+          title="Show everyone, anywhere"
+          subtitle="Ignore everyone’s max distance. Discovery shows people from anywhere, nearest first. Age, gender and other filters still apply."
+          checked={settings.discoverEveryone}
+          onToggle={toggle}
+          divider={false}
+        />
+      ) : (
+        !error && <Shimmer radius={0} style={{ height: 72 }} />
+      )}
+      {error && <div style={{ ...T.bodySmall, color: RelunColors.WarningText, padding: '8px 16px' }}>{error}</div>}
     </div>
   );
 }

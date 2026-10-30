@@ -363,3 +363,6 @@ export type AdminStats = {
   server: { uptimeSeconds: number; memoryMb: number; heapMb: number; load: number[]; cpus: number; node: string };
   trend: AdminTrendDay[];
 };
+
+// GET/PATCH api/admin/settings
+export type AdminSettings = { discoverEveryone: boolean };

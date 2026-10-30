@@ -206,6 +206,9 @@ export const api = {
 
   // ---------- Admin (web only) ----------
   adminStats: () => request<D.AdminStats>('GET', 'api/admin/stats'),
+  adminSettings: () => request<D.AdminSettings>('GET', 'api/admin/settings'),
+  updateAdminSettings: (body: Partial<D.AdminSettings>) =>
+    request<D.AdminSettings>('PATCH', 'api/admin/settings', body),
 
   // ---------- Settings ----------
   settings: () => request<D.SettingsResponse>('GET', 'api/settings'),
